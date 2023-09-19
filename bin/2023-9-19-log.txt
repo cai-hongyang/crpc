@@ -1,0 +1,11 @@
+20-48-13 => [info] service_name: UserServiceRpc
+20-48-13 => [info] method_name: Login
+20-48-13 => [info] method_name: Register
+21-31-26 => [info] ddddd
+21-31-26 => [info] ddddd
+21-31-26 => [info] service_name: FiendServiceRpc
+21-31-26 => [info] method_name: GetFriendsList
+21-44-43 => [info] ddddd
+21-44-43 => [info] ddddd
+21-44-43 => [info] service_name: FiendServiceRpc
+21-44-43 => [info] method_name: GetFriendsList
