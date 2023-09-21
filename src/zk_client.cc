@@ -53,7 +53,7 @@ void ZkClient::create(const char* path, const char* data, int len, int state) {
             std::cout << "znode create error... path: : " << path << std::endl;
             exit(EXIT_FAILURE);
         }
-    } 
+    }
 }
 
 std::string ZkClient::getData(const char* path) {
@@ -66,4 +66,23 @@ std::string ZkClient::getData(const char* path) {
         std::cout << "get znode error... path: " << path << std::endl;
         return "";
     }
+}
+
+
+// std::string = "ip:port"
+std::vector<std::string> ZkClient::getChildrenNodes(const char* path) {
+    String_vector strs;
+    std::vector<std::string> res;
+    int flag = zoo_get_children(m_zhandle, path, 0, &strs);
+    if (flag == ZOK) {
+        int n = strs.count;
+        for (int i = 0; i < n; i++) {
+            res.push_back(strs.data[i]);
+        }
+    } else {
+        std::cout << "get children znodes error... path: " << path << std::endl;
+        return {};
+    }
+
+    return res;
 }

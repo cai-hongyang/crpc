@@ -10,6 +10,7 @@
 #include "application.h"
 #include "zk_client.h"
 #include "crpc_controller.h"
+#include "load_balance.h"
 
 void CRpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
                     google::protobuf::RpcController* controller, 
@@ -50,10 +51,8 @@ void CRpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
 
     std::cout << "============================================" << std::endl;
     std::cout << "header_size: " << header_size << std::endl; 
-    std::cout << "rpc_header_str: " << header << std::endl; 
     std::cout << "service_name: " << service_name << std::endl; 
     std::cout << "method_name: " << method_name << std::endl; 
-    std::cout << "args_str: " << args_str << std::endl; 
     std::cout << "============================================" << std::endl;
 
     int clientfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -64,16 +63,24 @@ void CRpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
         return;
     }
 
-    // 读取配置文件rpcserver的信息
-    // std::string ip = MprpcApplication::GetInstance().GetConfig().Load("rpcserverip");
-    // uint16_t port = atoi(MprpcApplication::GetInstance().GetConfig().Load("rpcserverport").c_str());
-    // rpc调用方想调用service_name的method_name服务，需要查询zk上该服务所在的host信息
     ZkClient zkCli;
     zkCli.start();
     //  /UserServiceRpc/Login
     std::string method_path = "/" + service_name + "/" + method_name;
     // 127.0.0.1:8000
-    std::string host_data = zkCli.getData(method_path.c_str());
+    // std::string host_data = zkCli.getData(method_path.c_str());
+
+    // addrs每个元素都是 "ip:port"
+    LoadBalance* loadBalance = new ConsistentHashLoadBalance();
+    std::string request_name = service_name + method_name;
+    // std::string path = method_path + "/";
+    std::vector<std::string> addrs = zkCli.getChildrenNodes(method_path.c_str());
+    std::string host_data = loadBalance->doSelect(addrs, request_name, args_str);
+
+    std::cout << "============================================" << std::endl;
+    std::cout << "server_addr: " << host_data << std::endl; 
+    std::cout << "============================================" << std::endl;
+
     if (host_data == "") {
         controller->SetFailed(method_path + " is not exist!");
         return;

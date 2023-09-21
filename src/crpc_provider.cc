@@ -32,6 +32,7 @@ void CRpcProvider::publishService(google::protobuf::Service* service) {
 void CRpcProvider::run() {
     std::string ip = Application::getInstance().getConfig().getConfigItem("serverip");
     uint16_t port = atoi(Application::getInstance().getConfig().getConfigItem("serverport").c_str());
+    std::string addr = ip + ":" + Application::getInstance().getConfig().getConfigItem("serverport");
     muduo::net::InetAddress address(ip, port);
 
     muduo::net::TcpServer server(&m_loop, address, "CRpcProvider");
@@ -46,7 +47,14 @@ void CRpcProvider::run() {
         std::string service_path = "/" + s.first;
         zkClient.create(service_path.c_str(), nullptr, 0);
         for (auto& m: s.second.m_methodMap) {
-            std::string method_path = service_path + "/" + m.first;
+            // std::string method_path = service_path + "/" + m.first;
+
+            
+            std::string path = service_path + "/" + m.first;
+            zkClient.create(path.c_str(), nullptr, 0);
+
+            // /service_name/method_name/ip:port
+            std::string method_path = service_path + "/" + m.first + "/" + addr;
             char method_path_data[128] = {0};
             sprintf(method_path_data, "%s:%d", ip.c_str(), port);
             zkClient.create(method_path.c_str(), method_path_data, strlen(method_path_data), ZOO_EPHEMERAL);
@@ -97,10 +105,8 @@ void CRpcProvider::onMessage(const muduo::net::TcpConnectionPtr& conn,
     // 打印信息
     std::cout << "============================================" << std::endl;
     std::cout << "header_size: " << header_size << std::endl; 
-    std::cout << "rpc_header: " << header << std::endl; 
     std::cout << "service_name: " << service_name << std::endl; 
     std::cout << "method_name: " << method_name << std::endl; 
-    std::cout << "args_str: " << args_str << std::endl; 
     std::cout << "============================================" << std::endl;
 
     auto s_it = m_serviceMap.find(service_name);
